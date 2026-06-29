@@ -1,0 +1,306 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{luatexja}
+\usepackage{luatexja-fontspec}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+
+\geometry{margin=25mm}
+
+\definecolor{codebg}{HTML}{0A1520}
+\definecolor{rusttext}{HTML}{D4DDE8}
+\definecolor{codered}{HTML}{E05C2A}
+\definecolor{codeblue}{HTML}{5BB0C0}
+\definecolor{codegreen}{HTML}{A3D977}
+\definecolor{codegray}{HTML}{4A6278}
+\definecolor{codeyellow}{HTML}{F0B06A}
+
+\lstdefinelanguage{Rust}{
+  keywords={fn, let, mut, if, else, return, const, true, false, as},
+  keywordstyle=\color{codered}\bfseries,
+  ndkeywords={bool, i8, i32, i64, i128, u8, u32, u64, u128, isize, usize, f32, f64, str},
+  ndkeywordstyle=\color{codeblue},
+  sensitive=true,
+  morecomment=[l]{//},
+  commentstyle=\color{codegray}\itshape,
+  morestring=[b]",
+  stringstyle=\color{codegreen},
+}
+
+\lstset{
+  language=Rust,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{rusttext},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeblue!40},
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  numbersep=8pt,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=16pt,
+}
+
+\newtcolorbox{qabox}{
+  colback=black!30,
+  colframe=codeblue!60,
+  leftrule=3pt, toprule=0.4pt, bottomrule=0.4pt, rightrule=0.4pt,
+  fontupper=\small,
+}
+
+\newtcolorbox{pointbox}{
+  colback=black!20,
+  colframe=codered!60,
+  leftrule=3pt, toprule=0.4pt, bottomrule=0.4pt, rightrule=0.4pt,
+  fontupper=\small,
+}
+
+\begin{document}
+
+\begin{center}
+  {\small\ttfamily\color{codered} CHAPTER 01 · Tour of Rust}\\[6pt]
+  {\LARGE\bfseries 第1章：基礎}\\[4pt]
+  {\small\color{gray} 変数・型・関数 — Rust の基本的な構成要素}
+\end{center}
+
+\vspace{2mm}\hrule\vspace{6mm}
+
+% ═══════════════════════════
+\section{変数 \texttt{let}}
+
+\texttt{let} キーワードで変数を宣言する。Rustは型推論を持つので多くの場合型を省略できる。命名規則は\textbf{スネークケース}（\texttt{snake\_case}）。
+
+\begin{lstlisting}
+fn main() {
+    let x = 5;          // 型推論 → i32
+    let y: i64 = 10;    // 型を明示
+
+    // シャドウイング：同じ名前で再宣言できる
+    let x = x + 1;      // x は 6（新しい変数）
+    let x = "hello";    // 型が変わってもOK
+}
+\end{lstlisting}
+
+\begin{qabox}
+\textbf{Q. スネークケースってなんですか？}\\
+単語と単語をアンダースコア \texttt{\_} でつなぐ命名規則。\texttt{my\_variable} のように横に這うのがヘビ（snake）っぽいことからそう呼ばれる。アンダースコアがなくてもコンパイルはできるが、キャメルケース（\texttt{myVariable}）を使うと警告が出る。コンパイラ自体が警告を出すレベルの、公式が推奨する慣習。
+\end{qabox}
+
+% ═══════════════════════════
+\section{変数の変更 \texttt{mut}}
+
+変数はデフォルトで\textbf{不変（immutable）}。変更したいときは \texttt{mut} を付ける。
+
+\begin{lstlisting}
+fn main() {
+    let x = 5;
+    // x = 6;  ← コンパイルエラー！不変なので変更不可
+
+    let mut y = 5;
+    y = 6;       // OK
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{基本的な型}
+
+\begin{lstlisting}
+let x  = 12;       // デフォルトでは i32
+let a  = 12u8;     // サフィックスで型を直接指定
+let b  = 4.3;      // デフォルトでは f64
+let c  = 4.3f32;
+let bv = true;     // bool
+let t  = (13, false);        // タプル (i32, bool)
+let sentence = "hello world!"; // &str
+\end{lstlisting}
+
+\subsection*{整数型}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{型} & \textbf{符号} & \textbf{ビット幅} & \textbf{値の範囲（概略）} \\
+\midrule
+\texttt{u8}    & なし & 8 bit   & $0$ 〜 $255$ \\
+\texttt{u32}   & なし & 32 bit  & $0$ 〜 約$4.3\times10^{9}$ \\
+\texttt{u64}   & なし & 64 bit  & $0$ 〜 約$1.8\times10^{19}$ \\
+\texttt{u128}  & なし & 128 bit & $0$ 〜 約$3.4\times10^{38}$ \\
+\texttt{i8}    & あり & 8 bit   & $-128$ 〜 $127$ \\
+\texttt{i32}   & あり & 32 bit  & 約$\pm 2.1\times10^{9}$ \\
+\texttt{i64}   & あり & 64 bit  & 約$\pm 9.2\times10^{18}$ \\
+\texttt{i128}  & あり & 128 bit & 約$\pm 1.7\times10^{38}$ \\
+\texttt{usize} & なし & arch依存 & ポインタサイズ（配列インデックス用） \\
+\texttt{isize} & あり & arch依存 & ポインタサイズ（符号付き） \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{qabox}
+\textbf{Q. ポインタサイズ整数型とは？}\\
+プログラムが動く環境のビット幅に合わせたサイズ。64ビットPCでは \texttt{usize} = 64bit。配列のインデックスは必ず \texttt{usize} でないとコンパイルエラーになる。「配列のインデックス = \texttt{usize}」と覚えておけばOK。
+\end{qabox}
+
+\subsection*{タプル}
+
+異なる型の値をひとまとめにしたもの。配列は「全部同じ型」だが、タプルは「型がバラバラでもOK」。
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+& \textbf{型} & \textbf{長さ} \\
+\midrule
+配列 \texttt{[i32; 3]}       & 全部同じ & 固定 \\
+タプル \texttt{(i32, f64, bool)} & バラバラでOK & 固定 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{qabox}
+\textbf{Q. タプル型ってなんですか？}\\
+「名前・年齢・身長」のように型が違う値をまとめたいときに使う。要素へのアクセスは \texttt{result.0}、\texttt{result.1} のように書く。主な使い道は関数から複数の値を返すとき。もっと複雑になったら後の章で出てくる構造体（struct）を使うのがRustらしいやり方。
+\end{qabox}
+
+% ═══════════════════════════
+\section{基本型の変換 \texttt{as}}
+
+Rustは型に厳格で、異なる数値型を混在させると（計算の中で型が違うと）コンパイルエラーになる。\texttt{as} キーワードで変換する。
+
+\begin{lstlisting}
+fn main() {
+    let a: i32 = 13;
+    let b = a as f64;     // i32 → f64 (13.0)
+
+    let c: f64 = 3.99;
+    let d = c as i32;     // f64 → i32 (3) ← 切り捨て（四捨五入ではない）
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{定数 \texttt{const}}
+
+プログラム全体で使う固定値は \texttt{const} で定義する。型の明示が必須。命名は \texttt{SCREAMING\_SNAKE\_CASE}。
+
+\begin{lstlisting}
+const MAX_POINTS: u32 = 100_000;
+
+fn main() {
+    println!("{}", MAX_POINTS);
+}
+\end{lstlisting}
+
+\begin{qabox}
+\textbf{Q. インライン展開ってなんですか？}\\
+コンパイル時に定数の名前が値に直接置き換えられること。変数はメモリのどこかに値が置かれそこを参照しに行くが、定数はコンパイル時に値が埋め込まれるのでメモリを参照しに行かない。「定数は変数よりちょっと効率がいい」くらいの理解でOK。
+\end{qabox}
+
+% ═══════════════════════════
+\section{配列 \texttt{[T; N]}}
+
+同じ型の要素を固定長で並べたもの。長さはコンパイル時に確定する。
+
+\begin{lstlisting}
+fn main() {
+    let nums: [i32; 3] = [1, 2, 3];
+    println!("{}", nums[0]);     // 1（0始まり）
+    println!("{}", nums.len());  // 3
+
+    let zeros = [0; 5];          // [0, 0, 0, 0, 0]
+
+    // インデックスは usize が必要
+    let i: usize = 1;
+    println!("{}", nums[i]);     // 2
+}
+\end{lstlisting}
+
+\begin{qabox}
+\textbf{Q. 「長さはコンパイル時に確定する」とは？}\\
+定数と同じイメージで、配列の長さ \texttt{[i32; 3]} の \texttt{3} はコンパイル時に決まっていないといけない。実行中にユーザーの入力で長さを決めたい場合は、後の章で出てくる \texttt{Vec}（可変長配列）を使う。
+\end{qabox}
+
+% ═══════════════════════════
+\section{関数 \texttt{fn}}
+
+\texttt{fn} キーワードで定義。引数には必ず型を書く。戻り値の型は \texttt{->} で指定。
+
+\begin{lstlisting}
+fn add(x: i32, y: i32) -> i32 {
+    x + y  // セミコロンなし → この値が戻り値
+}
+
+fn main() {
+    let result = add(5, 3);
+    println!("{}", result);  // 8
+}
+\end{lstlisting}
+
+\begin{pointbox}
+\textbf{重要：}ブロックの最後の式（セミコロンなし）が戻り値になる。\texttt{return} も使えるが、最後の式で返すのがRustらしいスタイル。
+\end{pointbox}
+
+% ═══════════════════════════
+\section{複数の戻り値}
+
+タプルを使って複数の値を返せる。
+
+\begin{lstlisting}
+fn swap(x: i32, y: i32) -> (i32, i32) {
+    return (y, x);
+}
+
+fn main() {
+    let result = swap(123, 321);
+    println!("{} {}", result.0, result.1);
+
+    // デストラクチャリング：タプルを直接2つの変数に分解して受け取る
+    let (a, b) = swap(result.0, result.1);
+    println!("{} {}", a, b);
+}
+\end{lstlisting}
+
+\begin{qabox}
+\textbf{Q. タプルを2つの変数に分解とは？}\\
+\texttt{let (a, b) = swap(...)} は、タプルの形に合わせて変数を並べると自動で対応する値が入る書き方。「形を合わせて直接代入」するイメージ。普通に \texttt{result.0}、\texttt{result.1} でアクセスするのと同じ意味だが、すっきり書ける。
+\end{qabox}
+
+% ═══════════════════════════
+\section{空の戻り値 \texttt{()}}
+
+戻り値の型を省略すると、関数は \texttt{()}（ユニット型、空のタプル）を返す。他言語の \texttt{void} に相当するが、Rustでは値として扱える。
+
+\begin{lstlisting}
+// この2つは同じ意味
+fn say_hello() -> () {
+    println!("こんにちは");
+}
+
+fn say_bye() {      // -> () を省略
+    println!("さようなら");
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section*{その他のメモ}
+
+\begin{qabox}
+\textbf{警告（warning）について}\\
+「変数を宣言したけど一度も使っていないよ」という親切な注意。エラーではなくコンパイルは成功している。消したいときは変数名の先頭に \texttt{\_} をつける（例：\texttt{let \_x = 12}）。
+\end{qabox}
+
+\vspace{4mm}
+
+\begin{qabox}
+\textbf{\texttt{\{:?\}} とは？}\\
+デバッグ用の表示フォーマット。通常の \texttt{\{\}} はタプルや配列を表示できないが、\texttt{\{:?\}} なら「とりあえず中身を全部見せて」という指定で表示できる。バグったときに変数の中身を確認するのに便利。
+\end{qabox}
+
+\vspace{6mm}
+\hrule
+\vspace{2mm}
+{\small\color{gray}\textit{Tour of Rust — 第1章 / 基礎}}
+
+\end{document}
