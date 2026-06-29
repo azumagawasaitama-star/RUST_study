@@ -1,0 +1,262 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{luatexja}
+\usepackage{luatexja-fontspec}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins}
+
+\geometry{margin=25mm}
+
+\definecolor{codebg}{HTML}{0A1520}
+\definecolor{rusttext}{HTML}{D4DDE8}
+\definecolor{codered}{HTML}{E05C2A}
+\definecolor{codeblue}{HTML}{5BB0C0}
+\definecolor{codegreen}{HTML}{A3D977}
+\definecolor{codegray}{HTML}{4A6278}
+
+\lstdefinelanguage{Rust}{
+  keywords={fn, let, mut, if, else, loop, while, for, in, match, break, return, true, false, as},
+  keywordstyle=\color{codered}\bfseries,
+  ndkeywords={bool, i32, i64, u8, u32, f32, f64, usize, str},
+  ndkeywordstyle=\color{codeblue},
+  sensitive=true,
+  morecomment=[l]{//},
+  commentstyle=\color{codegray}\itshape,
+  morestring=[b]",
+  stringstyle=\color{codegreen},
+}
+
+\lstset{
+  language=Rust,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{rusttext},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeblue!40},
+  numbers=left,
+  numberstyle=\tiny\color{codegray},
+  numbersep=8pt,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=16pt,
+}
+
+\newtcolorbox{notebox}{
+  colback=black!30,
+  colframe=codeblue!60,
+  leftrule=3pt, toprule=0.4pt, bottomrule=0.4pt, rightrule=0.4pt,
+  fontupper=\small,
+}
+
+\newtcolorbox{pointbox}{
+  colback=black!20,
+  colframe=codered!60,
+  leftrule=3pt, toprule=0.4pt, bottomrule=0.4pt, rightrule=0.4pt,
+  fontupper=\small,
+}
+
+\begin{document}
+
+\begin{center}
+  {\small\ttfamily\color{codered} CHAPTER 02 · Tour of Rust}\\[6pt]
+  {\LARGE\bfseries 第2章：基本制御フロー}\\[4pt]
+  {\small\color{gray} 条件分岐・ループ・パターンマッチ}
+\end{center}
+
+\vspace{2mm}\hrule\vspace{6mm}
+
+% ═══════════════════════════
+\section{\texttt{if} / \texttt{else if} / \texttt{else}}
+
+他の言語と違い、条件式に括弧 \texttt{()} が不要。比較演算子（\texttt{==}, \texttt{!=}, \texttt{<}, \texttt{>}, \texttt{<=}, \texttt{>=}）と論理演算子（\texttt{!}, \texttt{||}, \texttt{\&\&}）が使える。
+
+比較演算子も演算の一種なので、\textbf{型が一致していないとコンパイルエラー}になる。例えば \texttt{f64} の変数と整数リテラル \texttt{42} を比較しようとするとエラーになるため、\texttt{42.0} と書いて型を合わせる必要がある。
+
+\begin{lstlisting}
+fn main() {
+    let x = 41.9999_f64;
+    if x < 42.0 {           // 42 ではなく 42.0 と書く
+        println!("42より小さい");
+    } else if x == 42.0 {
+        println!("42に等しい");
+    } else {
+        println!("42より大きい");
+    }
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{\texttt{loop}}
+
+無限ループ。\texttt{break} で抜け出す。条件を書き忘れると整数がオーバーフローしてパニックするので注意。
+
+\begin{lstlisting}
+fn main() {
+    let mut x = 0;
+    loop {
+        x += 1;
+        if x == 42 {
+            break;
+        }
+    }
+    println!("{}", x);  // 42
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{\texttt{while}}
+
+条件が \texttt{true} の間ループし続ける。条件が \texttt{false} になったら終了。出力がなくてもエラーではない（\texttt{println!} を書かなければ何も表示されないだけ）。
+
+\begin{lstlisting}
+fn main() {
+    let mut x = 0;
+    while x != 42 {
+        x += 1;
+    }
+    println!("{}", x);  // 42
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{\texttt{for}}
+
+イテレータを使って繰り返す。Rustでは \texttt{..} を使うだけで整数のシーケンス（イテレータ）を簡単に作れる。
+
+\begin{lstlisting}
+fn main() {
+    // 0..5 → 0, 1, 2, 3, 4（終端を含まない）
+    for x in 0..5 {
+        println!("{}", x);
+    }
+
+    // 0..=5 → 0, 1, 2, 3, 4, 5（終端を含む）
+    for x in 0..=5 {
+        println!("{}", x);
+    }
+
+    // 配列を直接回す
+    let nums = [10, 20, 30];
+    for n in nums {
+        println!("{}", n);
+    }
+}
+\end{lstlisting}
+
+\begin{notebox}
+\texttt{..} と \texttt{..=} の違いは終端を含むかどうかだけ。Pythonの \texttt{range(0, 5)} が \texttt{0..5} に相当する。
+\end{notebox}
+
+% ═══════════════════════════
+\section{\texttt{match}}
+
+値が何かによって分岐する。他言語の \texttt{switch} に相当するが、\textbf{全パターンを網羅しないとコンパイルエラー}になる点が大きな違い。
+
+\texttt{match} の構造は「パターン \texttt{=>} 処理」で、\texttt{=>} は矢印（不等号ではない）。
+
+\begin{lstlisting}
+fn main() {
+    let x = 42;
+
+    match x {
+        0 => {
+            println!("ゼロ");
+        }
+        1 | 2 => {              // | は「または」（1か2のどちらか）
+            println!("1か2");
+        }
+        3..=9 => {              // 範囲指定（3以上9以下）
+            println!("3から9");
+        }
+        matched_num @ 10..=100 => {  // @ でマッチした値に名前をつける
+            println!("{}は10から100の間", matched_num);
+        }
+        _ => {                  // _ はワイルドカード（それ以外全部）
+            println!("それ以外");
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{notebox}
+\texttt{1 | 2} は「1または2」という列挙。\texttt{1..=2}（範囲）とは書き方が違うが、今回の場合は結果は同じ。\\
+\texttt{matched\_num @ 10..=100} は「10以上100以下にマッチして、その値を \texttt{matched\_num} という名前で使う」という意味。
+\end{notebox}
+
+% ═══════════════════════════
+\section{\texttt{loop} から値を返す}
+
+\texttt{break} に値を付けると、\texttt{loop} 全体がその値を返す式になる。
+
+\begin{lstlisting}
+fn main() {
+    let mut x = 0;
+    let result = loop {
+        x += 1;
+        if x == 42 {
+            break x * 2;    // break に値を付けて返す
+        }
+    };
+    println!("{}", result); // 84
+}
+\end{lstlisting}
+
+% ═══════════════════════════
+\section{ブロック式から値を返す}
+
+Rustでは \texttt{if}、\texttt{match}、\texttt{\{ \}} ブロックはすべて値を返す\textbf{式}。最後の行にセミコロンを付けなければその値が返る（第1章の関数と同じルール）。
+
+これを使うと、Pythonの三項演算子（\texttt{-1 if x < 42 else 1}）と同じことが \texttt{if} 式で書ける。
+
+\begin{lstlisting}
+fn main() {
+    let x = 42;
+
+    // if を三項演算子のように使う（Pythonの「A if 条件 else B」と同じ発想）
+    let label = if x < 42 { "小さい" } else { "大きい" };
+    println!("{}", label);
+
+    // ブロックも値を返せる
+    let msg = {
+        let y = x * 2;
+        format!("x={}, 2倍={}", x, y)  // セミコロンなし → これが返り値
+    };
+    println!("{}", msg);
+}
+\end{lstlisting}
+
+\begin{pointbox}
+\textbf{文と式の区別}\\
+セミコロンあり → 文（値を返さない）。セミコロンなし → 式（値を返す）。この区別がRust全体で一貫して使われる重要なルール。
+\end{pointbox}
+
+% ═══════════════════════════
+\section*{まとめ}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{構文} & \textbf{説明} \\
+\midrule
+\texttt{if x < 42 \{ \}} & 条件分岐（括弧不要）\\
+\texttt{loop \{ break; \}} & 無限ループ + break \\
+\texttt{while x != 0 \{ \}} & 条件付きループ \\
+\texttt{for x in 0..5 \{ \}} & イテレータループ（終端含まず）\\
+\texttt{for x in 0..=5 \{ \}} & イテレータループ（終端含む）\\
+\texttt{match x \{ \_ => \}} & 網羅的パターンマッチ \\
+\texttt{break x * 2} & loopから値を返す \\
+\texttt{let v = if … \{ \} else \{ \}} & if式（三項演算子代わり）\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{6mm}
+\hrule
+\vspace{2mm}
+{\small\color{gray}\textit{Tour of Rust — 第2章 / 基本制御フロー}}
+
+\end{document}
